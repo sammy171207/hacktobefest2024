@@ -4,13 +4,17 @@ class Bus {
     int busNumber;
     String busName;
     String route;
+    int totalSeats;
     int availableSeats;
+    double farePerSeat;
 
-    public Bus(int busNumber, String busName, String route, int availableSeats) {
+    public Bus(int busNumber, String busName, String route, int totalSeats, double farePerSeat) {
         this.busNumber = busNumber;
         this.busName = busName;
         this.route = route;
-        this.availableSeats = availableSeats;
+        this.totalSeats = totalSeats;
+        this.availableSeats = totalSeats;
+        this.farePerSeat = farePerSeat;
     }
 
     public void bookSeat() {
@@ -25,7 +29,7 @@ class Bus {
 
     @Override
     public String toString() {
-        return "Bus Number: " + busNumber + ", Bus Name: " + busName + ", Route: " + route + ", Available Seats: " + availableSeats;
+        return "Bus Number: " + busNumber + ", Bus Name: " + busName + ", Route: " + route + ", Fare: ₹" + farePerSeat + ", Available Seats: " + availableSeats;
     }
 }
 
@@ -33,22 +37,26 @@ class Reservation {
     Bus bus;
     String passengerName;
     int seatNumber;
+    double fare;
 
-    public Reservation(Bus bus, String passengerName, int seatNumber) {
+    public Reservation(Bus bus, String passengerName, int seatNumber, double fare) {
         this.bus = bus;
         this.passengerName = passengerName;
         this.seatNumber = seatNumber;
+        this.fare = fare;
     }
 
     @Override
     public String toString() {
-        return "Reservation for " + passengerName + ": Bus " + bus.busName + " (" + bus.route + "), Seat Number: " + seatNumber;
+        return "Reservation for " + passengerName + ": Bus " + bus.busName + " (" + bus.route + "), Seat Number: " + seatNumber + ", Fare: ₹" + fare;
     }
 }
 
 class BusReservationSystem {
     List<Bus> buses;
     List<Reservation> reservations;
+    private final String adminUsername = "admin";
+    private final String adminPassword = "password";
 
     public BusReservationSystem() {
         buses = new ArrayList<>();
@@ -57,10 +65,10 @@ class BusReservationSystem {
     }
 
     private void setupBuses() {
-        buses.add(new Bus(101, "Express Bus", "Mumbai to Pune", 10));
-        buses.add(new Bus(102, "Deluxe Bus", "Pune to Bangalore", 15));
-        buses.add(new Bus(103, "Sleeper Bus", "Delhi to Jaipur", 20));
-        buses.add(new Bus(104, "AC Bus", "Chennai to Hyderabad", 12));
+        buses.add(new Bus(101, "Express Bus", "Mumbai to Pune", 10, 500.00));
+        buses.add(new Bus(102, "Deluxe Bus", "Pune to Bangalore", 15, 800.00));
+        buses.add(new Bus(103, "Sleeper Bus", "Delhi to Jaipur", 20, 600.00));
+        buses.add(new Bus(104, "AC Bus", "Chennai to Hyderabad", 12, 1000.00));
     }
 
     public void showBuses() {
@@ -86,11 +94,11 @@ class BusReservationSystem {
         }
 
         if (selectedBus.availableSeats > 0) {
-            int seatNumber = selectedBus.availableSeats;
-            Reservation reservation = new Reservation(selectedBus, passengerName, seatNumber);
+            int seatNumber = selectedBus.totalSeats - selectedBus.availableSeats + 1;
+            Reservation reservation = new Reservation(selectedBus, passengerName, seatNumber, selectedBus.farePerSeat);
             selectedBus.bookSeat();
             reservations.add(reservation);
-            System.out.println("Seat booked successfully! Your seat number is " + seatNumber);
+            System.out.println("Seat booked successfully! Your seat number is " + seatNumber + ", Fare: ₹" + selectedBus.farePerSeat);
         } else {
             System.out.println("No seats available on this bus.");
         }
@@ -127,6 +135,39 @@ class BusReservationSystem {
             System.out.println("No reservations found for " + passengerName);
         }
     }
+
+    public void viewAllReservations() {
+        if (reservations.isEmpty()) {
+            System.out.println("No reservations made yet.");
+            return;
+        }
+
+        System.out.println("----- All Reservations -----");
+        for (Reservation reservation : reservations) {
+            System.out.println(reservation);
+        }
+        System.out.println("----------------------------");
+    }
+
+    public void searchBusByRoute(String route) {
+        System.out.println("----- Buses for Route: " + route + " -----");
+        boolean found = false;
+        for (Bus bus : buses) {
+            if (bus.route.equalsIgnoreCase(route)) {
+                System.out.println(bus);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            System.out.println("No buses found for this route.");
+        }
+        System.out.println("----------------------------");
+    }
+
+    public boolean adminLogin(String username, String password) {
+        return username.equals(adminUsername) && password.equals(adminPassword);
+    }
 }
 
 public class BusReservationApp {
@@ -137,10 +178,12 @@ public class BusReservationApp {
 
         while (running) {
             System.out.println("\n1. View Buses");
-            System.out.println("2. Reserve Seat");
-            System.out.println("3. Cancel Reservation");
-            System.out.println("4. View Booking Status");
-            System.out.println("5. Exit");
+            System.out.println("2. Search Bus by Route");
+            System.out.println("3. Reserve Seat");
+            System.out.println("4. Cancel Reservation");
+            System.out.println("5. View Booking Status");
+            System.out.println("6. Admin Login");
+            System.out.println("7. Exit");
             System.out.print("Select an option: ");
             int choice = scanner.nextInt();
             scanner.nextLine();  // Consume newline
@@ -150,23 +193,44 @@ public class BusReservationApp {
                     busSystem.showBuses();
                     break;
                 case 2:
+                    System.out.print("Enter the route (e.g., Mumbai to Pune): ");
+                    String route = scanner.nextLine();
+                    busSystem.searchBusByRoute(route);
+                    break;
+                case 3:
                     System.out.print("Enter your name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter bus number to book: ");
                     int busNumber = scanner.nextInt();
                     busSystem.reserveSeat(name, busNumber);
                     break;
-                case 3:
+                case 4:
                     System.out.print("Enter your name to cancel reservation: ");
                     name = scanner.nextLine();
                     busSystem.cancelReservation(name);
                     break;
-                case 4:
+                case 5:
                     System.out.print("Enter your name to view booking status: ");
                     name = scanner.nextLine();
                     busSystem.showReservations(name);
                     break;
-                case 5:
+                case 6:
+                    System.out.print("Admin Username: ");
+                    String username = scanner.nextLine();
+                    System.out.print("Admin Password: ");
+                    String password = scanner.nextLine();
+                    if (busSystem.adminLogin(username, password)) {
+                        System.out.println("Admin Login Successful!");
+                        System.out.println("\n1. View All Reservations\n2. Logout");
+                        int adminChoice = scanner.nextInt();
+                        if (adminChoice == 1) {
+                            busSystem.viewAllReservations();
+                        }
+                    } else {
+                        System.out.println("Invalid admin credentials.");
+                    }
+                    break;
+                case 7:
                     running = false;
                     break;
                 default:
